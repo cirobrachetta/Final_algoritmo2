@@ -2,61 +2,114 @@
 #include <stdexcept>
 #include <algorithm>
 
-// Constructor
-GestorAlquileres::GestorAlquileres() {}
-
-// Función para agregar un cliente
-void GestorAlquileres::altaCliente(int id, const string& nombre, const string& contacto) {
-    if (any_of(clientes.begin(), clientes.end(), [id](const auto& cliente) { return cliente->getId() == id; })) {
-        throw runtime_error("Ya existe un cliente con el ID proporcionado.");
-    }
-    clientes.push_back(make_shared<Cliente>(id, nombre, contacto));
+// Métodos de gestión de clientes
+void GestorAlquileres::altaCliente(int id, const std::string& nombre, const std::string& contacto) {
+    auto cliente = std::make_shared<Cliente>(id, nombre, contacto);
+    clientes.push_back(cliente);
 }
 
-// Función para agregar un cubículo
-void GestorAlquileres::altaCubiculo(int id, const string& ubicacion) {
-    if (any_of(cubiculos.begin(), cubiculos.end(), [id](const auto& cubiculo) { return cubiculo->getId() == id; })) {
-        throw runtime_error("Ya existe un cubiculo con el ID proporcionado.");
+void GestorAlquileres::bajaCliente(int id) {
+    auto it = std::remove_if(clientes.begin(), clientes.end(), [id](const auto& cliente) {
+        return cliente->getId() == id;
+    });
+
+    if (it != clientes.end()) {
+        clientes.erase(it, clientes.end());
+    } else {
+        throw std::runtime_error("Cliente no encontrado");
     }
-    cubiculos.push_back(make_shared<Cubiculo>(id, ubicacion));
 }
 
-// Función para registrar un alquiler
-void GestorAlquileres::altaAlquiler(int idAlquiler, int idCliente, const vector<int>& idsCubiculos,
-                                    const string& fechaInicio, const string& fechaFin) {
-    if (any_of(alquileres.begin(), alquileres.end(), [idAlquiler](const auto& alquiler) { return alquiler->id == idAlquiler; })) {
-        throw runtime_error("Ya existe un alquiler con el ID proporcionado.");
-    }
-
-    auto clienteIt = find_if(clientes.begin(), clientes.end(), [idCliente](const auto& cliente) { return cliente->getId() == idCliente; });
-    if (clienteIt == clientes.end()) {
-        throw runtime_error("Cliente no encontrado.");
-    }
-
-    vector<shared_ptr<Cubiculo>> cubiculosSeleccionados;
-    for (int idCubiculo : idsCubiculos) {
-        auto cubiculoIt = find_if(cubiculos.begin(), cubiculos.end(),
-                                       [idCubiculo](const auto& cubiculo) { return cubiculo->getId() == idCubiculo; });
-        if (cubiculoIt == cubiculos.end()) {
-            throw runtime_error("Cubículo no encontrado: ID " + to_string(idCubiculo));
+void GestorAlquileres::modificarCliente(int id, const std::string& nuevoNombre, const std::string& nuevoContacto) {
+    for (auto& cliente : clientes) {
+        if (cliente->getId() == id) {
+            cliente->setNombre(nuevoNombre);
+            cliente->setContacto(nuevoContacto);
+            return;
         }
-        cubiculosSeleccionados.push_back(*cubiculoIt);
     }
-
-    alquileres.push_back(make_shared<Alquiler>(idAlquiler, *clienteIt, cubiculosSeleccionados, fechaInicio, fechaFin));
+    throw std::runtime_error("Cliente no encontrado");
 }
 
-// Función para listar clientes
-vector<shared_ptr<Cliente>> GestorAlquileres::listarClientes() const {
+std::vector<std::shared_ptr<Cliente>> GestorAlquileres::listarClientes() const {
     return clientes;
 }
 
-// Función para listar cubículos
-vector<shared_ptr<Cubiculo>> GestorAlquileres::listarCubiculos() const {
+// Métodos de gestión de cubículos
+void GestorAlquileres::altaCubiculo(int id, const std::string& ubicacion) {
+    auto cubiculo = std::make_shared<Cubiculo>(id, ubicacion);
+    cubiculos.push_back(cubiculo);
+}
+
+void GestorAlquileres::bajaCubiculo(int id) {
+    auto it = std::remove_if(cubiculos.begin(), cubiculos.end(), [id](const auto& cubiculo) {
+        return cubiculo->getId() == id;
+    });
+
+    if (it != cubiculos.end()) {
+        cubiculos.erase(it, cubiculos.end());
+    } else {
+        throw std::runtime_error("Cubículo no encontrado");
+    }
+}
+
+void GestorAlquileres::modificarCubiculo(int id, const std::string& nuevaUbicacion, const std::string& nuevoEstado) {
+    for (auto& cubiculo : cubiculos) {
+        if (cubiculo->getId() == id) {
+            cubiculo->setUbicacion(nuevaUbicacion);
+            cubiculo->setEstado(nuevoEstado);
+            return;
+        }
+    }
+    throw std::runtime_error("Cubículo no encontrado");
+}
+
+std::vector<std::shared_ptr<Cubiculo>> GestorAlquileres::listarCubiculos() const {
     return cubiculos;
 }
 
-// Función para listar alquileres
-vector<shared_ptr<Alquiler>> GestorAlquileres::listarAlquileres() const {
+// Métodos de gestión de alquileres
+void GestorAlquileres::altaAlquiler(int id, int clienteId, const std::vector<int>& idsCubiculos, const std::string& fechaInicio, const std::string& fechaFin) {
+    auto clienteIt = std::find_if(clientes.begin(), clientes.end(), [clienteId](const auto& cliente) {
+        return cliente->getId() == clienteId;
+    });
+
+    if (clienteIt == clientes.end()) {
+        throw std::runtime_error("Cliente no encontrado");
+    }
+
+    std::vector<std::shared_ptr<Cubiculo>> alquilerCubiculos;
+    for (int cubiculoId : idsCubiculos) {
+        auto cubiculoIt = std::find_if(cubiculos.begin(), cubiculos.end(), [cubiculoId](const auto& cubiculo) {
+            return cubiculo->getId() == cubiculoId;
+        });
+
+        if (cubiculoIt == cubiculos.end()) {
+            throw std::runtime_error("Cubículo con ID " + std::to_string(cubiculoId) + " no encontrado");
+        }
+
+        alquilerCubiculos.push_back(*cubiculoIt);
+    }
+
+    auto alquiler = std::make_shared<Alquiler>(id, *clienteIt, nullptr);
+    alquiler->cubiculos = alquilerCubiculos;
+    alquiler->fechaInicio = fechaInicio;
+    alquiler->fechaFin = fechaFin;
+    alquileres.push_back(alquiler);
+}
+
+void GestorAlquileres::bajaAlquiler(int id) {
+    auto it = std::remove_if(alquileres.begin(), alquileres.end(), [id](const auto& alquiler) {
+        return alquiler->id == id;
+    });
+
+    if (it != alquileres.end()) {
+        alquileres.erase(it, alquileres.end());
+    } else {
+        throw std::runtime_error("Alquiler no encontrado");
+    }
+}
+
+std::vector<std::shared_ptr<Alquiler>> GestorAlquileres::listarAlquileres() const {
     return alquileres;
 }

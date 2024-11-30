@@ -1,4 +1,5 @@
 #include "Menu.hpp"
+#include <algorithm>
 #include <iostream>
 #include <string>
 
@@ -60,15 +61,57 @@ void Menu::mostrarMenu() {
             cout << "Ingrese ID del alquiler: ";
             cin >> idAlquiler;
 
+            // Listar clientes disponibles
+            auto clientes = gestor.listarClientes();
+            if (clientes.empty()) {
+                cout << "No hay clientes registrados. Registre un cliente antes de continuar.\n";
+                break;
+            }
+            cout << "\n=== Clientes Disponibles ===\n";
+            for (const auto& cliente : clientes) {
+                cout << "- ID: " << cliente->getId()
+                     << ", Nombre: " << cliente->getNombre()
+                     << ", Contacto: " << cliente->getContacto() << "\n";
+            }
+
             cout << "Ingrese ID del cliente: ";
             cin >> idCliente;
+
+            // Listar cubículos disponibles
+            auto cubiculos = gestor.listarCubiculos();
+            vector<shared_ptr<Cubiculo>> disponibles;
+            for (const auto& cubiculo : cubiculos) {
+                if (cubiculo->getEstado() == "Disponible") {
+                    disponibles.push_back(cubiculo);
+                }
+            }
+
+            if (disponibles.empty()) {
+                cout << "No hay cubiculos disponibles. Registre uno o espere a que se liberen.\n";
+                break;
+            }
+            cout << "\n=== Cubiculos Disponibles ===\n";
+            for (const auto& cubiculo : disponibles) {
+                cout << "- ID: " << cubiculo->getId()
+                     << ", Ubicacion: " << cubiculo->getUbicacion()
+                     << "\n";
+            }
 
             int idCubiculo;
             cout << "Ingrese IDs de cubiculos (ingrese -1 para finalizar):\n";
             while (true) {
                 cin >> idCubiculo;
                 if (idCubiculo == -1) break;
-                idsCubiculos.push_back(idCubiculo);
+
+                auto it = find_if(disponibles.begin(), disponibles.end(), [idCubiculo](const auto& cubiculo) {
+                    return cubiculo->getId() == idCubiculo;
+                });
+
+                if (it != disponibles.end()) {
+                    idsCubiculos.push_back(idCubiculo);
+                } else {
+                    cout << "ID de cubiculo inválida o no disponible. Intente de nuevo.\n";
+                }
             }
 
             cin.ignore();

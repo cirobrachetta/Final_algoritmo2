@@ -9,7 +9,7 @@ public:
 
     void enviarMensaje(const Cliente& cliente, const std::string& mensaje) override {
         mensajeEnviado = true;
-        std::cout << "MockMensaje: Simulación de mensaje enviado al cliente "
+        std::cout << "MockMensaje: Simulacion de mensaje enviado al cliente "
                   << cliente.getNombre() << " (ID: " << cliente.getId() << "): " << mensaje << "\n";
     }
 };
